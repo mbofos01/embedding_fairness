@@ -1,10 +1,33 @@
 from openai import OpenAI
 import pickle
 import os
-import read_embedding
 from typing import Tuple, List
 
 client = OpenAI()
+
+
+def read_embedding(sentence: str) -> Tuple[str, List[float]]:
+    """
+    Reads the embedding for a given sentence.
+
+    Args:
+        sentence (str): The sentence for which the embedding is to be read.
+
+    Returns:
+        tuple[str, list[float]]: A tuple containing the sentence and its embedding.
+
+    """
+    if f"{sentence}.pkl" not in os.listdir("embeddings"):
+        return None
+
+    try:
+        with open(f'embeddings/{sentence}.pkl', 'rb') as f:
+            loaded_embedding = pickle.load(f)
+    except Exception as e:
+        print(e)
+        return (sentence, None)
+
+    return (sentence, loaded_embedding.data[0].embedding)
 
 
 def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str = "The doctor called his friend", save_to_file: bool = True, force_recompute: bool = False) -> Tuple[str, List[float]]:
@@ -22,7 +45,7 @@ def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str
 
     """
     if f"{sentence}.pkl" in os.listdir("embeddings") and not force_recompute:
-        return read_embedding.read_embedding(sentence)
+        return read_embedding(sentence)
 
     generated_embedding = client.embeddings.create(
         model=model_used, input=[sentence])
