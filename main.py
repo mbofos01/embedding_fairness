@@ -16,6 +16,8 @@ for sentence in neutral_sentences:
 
 
 tuples = generate_tuples_for_comparison()
+labels = []
+embeddings = []
 
 for triplet in tuples:
     ml, fl, nl = triplet
@@ -26,3 +28,11 @@ for triplet in tuples:
     print(f"Female:  {fl}, Embedding: {len(fl_embedding)}")
     print(f"Neutral: {nl}, Embedding: {len(nl_embedding)}")
     print(f"{'---' * 20}\n")
+    embeddings.extend([ml_embedding, fl_embedding, nl_embedding])
+    labels.extend(['Male', 'Female', 'Neutral'])
+    # visualize_embeddings(embeddings=[ml_embedding, fl_embedding, nl_embedding], labels=['Male', 'Female', 'Neutral'],
+    #                      sentence=f"{nl}", show_plot=False, save_plot=True)
+
+
+visualize_embeddings(embeddings=embeddings, labels=labels,
+                     sentence=f"All Sentences", show_plot=True, save_plot=True)

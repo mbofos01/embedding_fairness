@@ -1,3 +1,6 @@
+import numpy as np
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 from openai import OpenAI
 import pickle
 import os
@@ -55,6 +58,46 @@ def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str
             pickle.dump(generated_embedding, f)
 
     return (sentence, generated_embedding.data[0].embedding)
+
+
+def visualize_embeddings(embeddings, labels, sentence, show_plot=True, save_plot=False):
+    """
+    Visualize the embeddings of a given sentence using t-SNE.
+
+    Args:
+        embeddings (list): A list of embeddings to be visualized.
+        labels (list): A list of labels for the embeddings.
+        sentence (str): The sentence for which the embeddings are to be visualized.
+        show_plot (bool): Whether to show the plot. Default is True.
+        save_plot (bool): Whether to save the plot. Default is False.
+
+    """
+    embeddings_array = np.array(embeddings)
+
+    tsne = TSNE(n_components=2, random_state=1, n_iter=15000,
+                perplexity=min(30, len(embeddings_array)-1), metric="cosine")
+
+    embeddings_2d = tsne.fit_transform(embeddings_array)
+
+    colors = ['lightcoral', 'lightgreen', 'skyblue']
+    for i, label in enumerate(set(labels)):
+        plt.scatter(embeddings_2d[np.array(labels) == label, 0], embeddings_2d[np.array(labels) == label, 1],
+                    label=label, color=colors[i], s=50)
+
+    plt.legend(prop={'size': 10}, loc='best')
+
+    plt.grid(True)
+
+    plt.xlabel('Dimension 1', size=11)
+    plt.ylabel('Dimension 2', size=11)
+    plt.title(f"t-SNE plot of the embeddings of {sentence}", size=12)
+
+    if save_plot:
+        plt.savefig(f"pictures/tsne_plot_{sentence}.png")
+    if show_plot:
+        plt.show()
+
+    plt.close()
 
 
 if __name__ == '__main__':
