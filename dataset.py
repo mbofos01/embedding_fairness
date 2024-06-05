@@ -1,9 +1,19 @@
+'''
+Helper variables to identify the parts of the sentence
+'''
 NOUN = "noun"
 ATTRIBUTE = "attribute"
 ADJECTIVE = "adjective"
 IS = "is"
 ARE = "are"
 
+'''
+The following three lists must be parallel to each other
+i.e. the attribute at index i in each list must refer to the same attribute
+for example as we can see below, the attribute at index 0
+male ~ female ~ human
+when adding an attribute to one list, make sure to add it to the other two lists as well
+'''
 MALE_ATTRIBUTES = ["male", "man", "boy", "brother", "he", "him", "his", "son"]
 
 FEMALE_ATTRIBUTES = ["female", "woman", "girl",
@@ -12,10 +22,20 @@ FEMALE_ATTRIBUTES = ["female", "woman", "girl",
 NEUTRAL_ATTRIBUTES = ["human", "person",
                       "individual", "sibling", "they", "them", "their", "offspring"]
 
-
+'''
+These nous were taken from the caliskan et al. paper
+'''
 GENDER_NEUTRAL_NOUNS = ["doctor", "lawyer", "cleaner", "nurse",
                         "teacher", "engineer", "scientist", "artist", "musician"]
 
+'''
+The following sentence templates are influenced by the caliskan et al. paper
+sentence: template for the sentence
+param1: the first parameter in the sentence
+param2: the second parameter in the sentence
+param3: the third parameter in the sentence
+attribute_index_used: the index of the attribute to be used in the sentence
+'''
 SENTENCE_TEMPLATES = [
 
     {'sentence': "The {} {} called", 'param1': ATTRIBUTE,
@@ -163,4 +183,3 @@ def generate_tuples_for_comparison(nouns=GENDER_NEUTRAL_NOUNS):
             tuples.append(tuple(temp))
 
     return tuples
-
