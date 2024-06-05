@@ -59,4 +59,4 @@ def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str
 
 if __name__ == '__main__':
     generate_embedding(
-        "The doctor called his friend", save_to_file=True)
+        sentence="The doctor called his friend", save_to_file=True)
