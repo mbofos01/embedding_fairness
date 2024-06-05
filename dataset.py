@@ -1,6 +1,8 @@
 NOUN = "noun"
 ATTRIBUTE = "attribute"
 ADJECTIVE = "adjective"
+IS = "is"
+ARE = "are"
 
 MALE_ATTRIBUTES = ["male", "man", "boy", "brother", "he", "him", "his", "son"]
 
@@ -20,7 +22,7 @@ SENTENCE_TEMPLATES = [
     {'sentence': "The {} is a {}", 'param1': NOUN, 'param2': ATTRIBUTE},
     {'sentence': "The {} is someone's {}", 'param1': NOUN, 'param2': ATTRIBUTE},
     {'sentence': "The {} said {} {} tired",
-        'param1': NOUN, 'param2': ADJECTIVE, 'param3': ATTRIBUTE},
+        'param1': NOUN, 'param2': ATTRIBUTE, 'param3': ADJECTIVE},
     {'sentence': "The {} asked everyone to not interrupt {}",
         'param1': NOUN, 'param2': ATTRIBUTE},
     {'sentence': "The {} called {} friend",
@@ -48,13 +50,13 @@ def generate_sentences(attributes='neutral', nouns=GENDER_NEUTRAL_NOUNS):
     sentences = []
 
     if attributes == "male":
-        adjective = "is"
+        adjective = IS
         attributes = MALE_ATTRIBUTES
     elif attributes == "female":
-        adjective = "is"
+        adjective = IS
         attributes = FEMALE_ATTRIBUTES
     elif attributes == "neutral":
-        adjective = "are"
+        adjective = ARE
         attributes = NEUTRAL_ATTRIBUTES
     else:
         raise ValueError("Invalid attribute")
@@ -65,20 +67,90 @@ def generate_sentences(attributes='neutral', nouns=GENDER_NEUTRAL_NOUNS):
 
             if template['param1'] == NOUN:
                 param1 = noun
-            else:
+            elif template['param1'] == ATTRIBUTE:
                 param1 = attribute
+            elif template['param1'] == ADJECTIVE:
+                param1 = adjective
 
             if template['param2'] == NOUN:
                 param2 = noun
-            else:
+            elif template['param2'] == ATTRIBUTE:
                 param2 = attribute
+            elif template['param2'] == ADJECTIVE:
+                param2 = adjective
+
+            if 'param3' in template:
+                if template['param3'] == NOUN:
+                    param3 = noun
+                elif template['param3'] == ATTRIBUTE:
+                    param3 = attribute
+                elif template['param3'] == ADJECTIVE:
+                    param3 = adjective
 
             if 'param3' in template:
                 sentence = template['sentence'].format(
-                    param1, param2, adjective)
+                    param1, param2, param3)
             else:
                 sentence = template['sentence'].format(param1, param2)
 
             sentences.append(sentence)
 
     return sentences
+
+
+def generate_tuples_for_comparison(nouns=GENDER_NEUTRAL_NOUNS):
+    """
+    Generate tuples of sentences for comparison.
+
+    Args:
+        nouns (list): The list of nouns to be used in the sentences
+
+    Returns:
+        list: A list of tuples of sentences for comparison
+
+    """
+    tuples = []
+
+    for noun in nouns:
+        for male_attr, female_attr, neutral_attr, template in zip(MALE_ATTRIBUTES, FEMALE_ATTRIBUTES, NEUTRAL_ATTRIBUTES, SENTENCE_TEMPLATES):
+            temp = []
+            for attribute in [male_attr, female_attr, neutral_attr]:
+                if attribute is not neutral_attr:
+                    adjective = IS
+                else:
+                    adjective = ARE
+
+                if template['param1'] == NOUN:
+                    param1 = noun
+                elif template['param1'] == ATTRIBUTE:
+                    param1 = attribute
+                elif template['param1'] == ADJECTIVE:
+                    param1 = adjective
+
+                if template['param2'] == NOUN:
+                    param2 = noun
+                elif template['param2'] == ATTRIBUTE:
+                    param2 = attribute
+                elif template['param2'] == ADJECTIVE:
+                    param2 = adjective
+
+                if 'param3' in template:
+                    if template['param3'] == NOUN:
+                        param3 = noun
+                    elif template['param3'] == ATTRIBUTE:
+                        param3 = attribute
+                    elif template['param3'] == ADJECTIVE:
+                        param3 = adjective
+
+
+                if 'param3' in template:
+                    sentence = template['sentence'].format(
+                        param1, param2, param3)
+                else:
+                    sentence = template['sentence'].format(param1, param2)
+
+                temp.append(sentence)
+
+            tuples.append(tuple(temp))
+
+    return tuples
