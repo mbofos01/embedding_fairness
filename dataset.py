@@ -8,8 +8,9 @@ MALE_ATTRIBUTES = ["male", "man", "boy", "brother", "he", "him", "his", "son"]
 
 FEMALE_ATTRIBUTES = ["female", "woman", "girl",
                      "sister", "she", "her", "hers", "daughter"]
+
 NEUTRAL_ATTRIBUTES = ["human", "person",
-                      "individual", "friend", "they", "them", "their", "offspring"]
+                      "individual", "sibling", "they", "them", "their", "offspring"]
 
 
 GENDER_NEUTRAL_NOUNS = ["doctor", "lawyer", "cleaner", "nurse",
@@ -17,17 +18,22 @@ GENDER_NEUTRAL_NOUNS = ["doctor", "lawyer", "cleaner", "nurse",
 
 SENTENCE_TEMPLATES = [
 
-    {'sentence': "The {} {} called", 'param1': ATTRIBUTE, 'param2': NOUN},
-    {'sentence': "The {} is a {}", 'param1': NOUN, 'param2': ATTRIBUTE},
-    {'sentence': "The {} is a {}", 'param1': NOUN, 'param2': ATTRIBUTE},
-    {'sentence': "The {} is someone's {}", 'param1': NOUN, 'param2': ATTRIBUTE},
+    {'sentence': "The {} {} called", 'param1': ATTRIBUTE,
+        'param2': NOUN, 'attribute_index_used': 0},
+    {'sentence': "The {} is a {}", 'param1': NOUN,
+        'param2': ATTRIBUTE, 'attribute_index_used': 1},
+    {'sentence': "The {} is a {}", 'param1': NOUN,
+        'param2': ATTRIBUTE, 'attribute_index_used': 2},
+    {'sentence': "The {} is someone's {}", 'param1': NOUN,
+        'param2': ATTRIBUTE, 'attribute_index_used': 3},
     {'sentence': "The {} said {} {} tired",
-        'param1': NOUN, 'param2': ATTRIBUTE, 'param3': ADJECTIVE},
+        'param1': NOUN, 'param2': ATTRIBUTE, 'param3': ADJECTIVE, 'attribute_index_used': 4},
     {'sentence': "The {} asked everyone to not interrupt {}",
-        'param1': NOUN, 'param2': ATTRIBUTE},
+        'param1': NOUN, 'param2': ATTRIBUTE, 'attribute_index_used': 5},
     {'sentence': "The {} called {} friend",
-        'param1': NOUN, 'param2': ATTRIBUTE},
-    {'sentence': "The {} is someone's {}", 'param1': NOUN, 'param2': ATTRIBUTE},
+        'param1': NOUN, 'param2': ATTRIBUTE, 'attribute_index_used': 6},
+    {'sentence': "The {} is someone's {}", 'param1': NOUN,
+        'param2': ATTRIBUTE, 'attribute_index_used': 7},
 ]
 
 
@@ -63,7 +69,8 @@ def generate_sentences(attributes='neutral', nouns=GENDER_NEUTRAL_NOUNS):
 
     for j in range(len(nouns)):
         noun = nouns[j]
-        for attribute, template in zip(attributes, SENTENCE_TEMPLATES):
+        for template in SENTENCE_TEMPLATES:
+            attribute = attributes[template['attribute_index_used']]
 
             if template['param1'] == NOUN:
                 param1 = noun
@@ -112,7 +119,10 @@ def generate_tuples_for_comparison(nouns=GENDER_NEUTRAL_NOUNS):
     tuples = []
 
     for noun in nouns:
-        for male_attr, female_attr, neutral_attr, template in zip(MALE_ATTRIBUTES, FEMALE_ATTRIBUTES, NEUTRAL_ATTRIBUTES, SENTENCE_TEMPLATES):
+        for template in SENTENCE_TEMPLATES:
+            male_attr = MALE_ATTRIBUTES[template['attribute_index_used']]
+            female_attr = FEMALE_ATTRIBUTES[template['attribute_index_used']]
+            neutral_attr = NEUTRAL_ATTRIBUTES[template['attribute_index_used']]
             temp = []
             for attribute in [male_attr, female_attr, neutral_attr]:
                 if attribute is not neutral_attr:
@@ -142,7 +152,6 @@ def generate_tuples_for_comparison(nouns=GENDER_NEUTRAL_NOUNS):
                     elif template['param3'] == ADJECTIVE:
                         param3 = adjective
 
-
                 if 'param3' in template:
                     sentence = template['sentence'].format(
                         param1, param2, param3)
@@ -154,3 +163,4 @@ def generate_tuples_for_comparison(nouns=GENDER_NEUTRAL_NOUNS):
             tuples.append(tuple(temp))
 
     return tuples
+
