@@ -29,8 +29,10 @@ def read_embedding(sentence: str) -> Tuple[str, List[float]]:
     except Exception as e:
         print(e)
         return (sentence, None)
-
-    return (sentence, loaded_embedding.data[0].embedding)
+    # Check if loaded_embedding has property data
+    if hasattr(loaded_embedding, "data"):
+        loaded_embedding = loaded_embedding.data[0]
+    return (sentence, loaded_embedding.embedding)
 
 
 def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str = "The doctor called his friend", save_to_file: bool = True, force_recompute: bool = False) -> Tuple[str, List[float]]:
@@ -59,6 +61,29 @@ def generate_embedding(model_used: str = "text-embedding-3-large", sentence: str
 
     return (sentence, generated_embedding.data[0].embedding)
 
+def generate_embedding_bulk(model_used: str = "text-embedding-3-large", sentences: List[str] = ["The doctor called his friend"], save_to_file: bool = True, force_recompute: bool = False) -> List[Tuple[str, List[float]]]:
+    """
+    """
+    results = {}
+    queue = set()
+    for sentence in sentences:
+        if f"{sentence}.pkl" in os.listdir("embeddings") and not force_recompute:
+            results[sentence] = read_embedding(sentence)
+        else:
+            queue.add(sentence)
+    print(f"From cache: {len(results)}, To compute: {len(queue)}")
+    if len(queue) > 0:
+        print(f"WARNING: Computing embeddings for sentences of length {len(queue)}. This costs $$.")
+        generated_embeddings = client.embeddings.create(
+            model=model_used, input=list(queue))
+        for sentence, generated_embedding in zip(queue, generated_embeddings.data):
+            results[sentence] = (sentence, generated_embedding.embedding)
+            if save_to_file:
+                with open(f"embeddings/{sentence}.pkl", 'wb') as f:
+                    pickle.dump(generated_embedding, f)
+
+    return [results[sentence] for sentence in sentences]
+
 
 def visualize_embeddings(embeddings, labels, sentence, show_plot=True, save_plot=False):
     """
@@ -79,7 +104,7 @@ def visualize_embeddings(embeddings, labels, sentence, show_plot=True, save_plot
 
     embeddings_2d = tsne.fit_transform(embeddings_array)
 
-    colors = ['lightcoral', 'lightgreen', 'skyblue']
+    colors = ['lightcoral', 'lightgreen', 'skyblue', 'gold', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'lime', 'teal', 'navy', 'red', 'green', 'blue', 'yellow', 'magenta', 'black', 'darkred', 'darkgreen', 'darkblue', 'darkorange', 'darkviolet', 'darkcyan', 'darkmagenta', 'darkyellow', 'darkgray', 'darkolive', 'darkpink', 'darkbrown', 'darkteal', 'darknavy']
     for i, label in enumerate(set(labels)):
         plt.scatter(embeddings_2d[np.array(labels) == label, 0], embeddings_2d[np.array(labels) == label, 1],
                     label=label, color=colors[i], s=50)
