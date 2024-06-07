@@ -33,9 +33,9 @@ def load_names_from_baby_names():
 
     # Assert that the sum of intersects percentages are 95% similar
     assert abs(intersect["percent_x"].sum() - intersect["percent_y"].sum()) / len(intersect) < 0.05
-    males_subset = males[:50]
-    females_subset = females[:50]
-    intersect_subset = intersect[:min(50,len(intersect))]
+    males_subset = males[:20]
+    females_subset = females[:20]
+    intersect_subset = intersect[:min(20,len(intersect))]
 
     # Return array of top 1000 names
     man_array = males_subset["name"].values
@@ -47,19 +47,32 @@ def load_names_from_baby_names():
 ### Load occupations from occupations.csv, this is some list of occupations I found online. I simplify to single word occupations.
 
 def load_occupations():
-    f = "occupations.csv"
+    f = "inc_occ_gender.csv"
+    # Has format Occupation,All_workers,All_weekly,M_workers,M_weekly,F_workers,F_weekly
     data = pd.read_csv(f)
-    single_word_occupations = [ocupation.lower() for ocupation in data["Occupations"].values if len(ocupation.split(" ")) == 1]
-    random.shuffle(single_word_occupations)
-    single_word_occupations.extend(["firefighter","nurse","doctor"])
-    single_word_occupations.reverse()
-    return single_word_occupations[:5]
+    # Remove data where Occupation is all caps
+    data = data[~data["Occupation"].str.isupper()]
+    # Sort by All_workers and get top 100
+    data = data.sort_values(by='All_workers', ascending=False)
+    data = data[:100]
+
+    # Add a collumn that has M_workers/F_workers
+    data["ratio"] = data["M_workers"] / data["F_workers"]
+    # Sort by ratio
+    data = data.sort_values(by='ratio', ascending=False)
+
+    # Get top occupations for both genders
+    top_m = data[:10]["Occupation"].values
+    top_f = data[-10:]["Occupation"].values
+
+    return (top_m,top_f)
+    
 
 
 (MALE_NAMES,FEMALE_NAMES,NEUTRAL_NAMES) = load_names_from_baby_names()
 
-OCUPATIONS = load_occupations()
-
+(MALE_OCUPATIONS,FEMALE_OCCUPATIONS) = load_occupations()
+print(MALE_OCUPATIONS,FEMALE_OCCUPATIONS)
 SENTENCE_TEMPLATES = [
     "{name} is a {attribute}",
     # "{name} is someone's {attribute}",
@@ -67,7 +80,7 @@ SENTENCE_TEMPLATES = [
     "{name} retired from being a {attribute}",
 ]
 
-def generate_sentences(attributes=OCUPATIONS, names=NEUTRAL_NAMES):
+def generate_sentences(names, attributes = pd.concat([pd.Series(MALE_OCUPATIONS),pd.Series(FEMALE_OCCUPATIONS)])):
     sentences = {}
     # Create all possible combinations of attribute, noun and sentence template
     triplets = list(itertools.product(attributes, names, SENTENCE_TEMPLATES))
@@ -81,7 +94,7 @@ def generate_sentences(attributes=OCUPATIONS, names=NEUTRAL_NAMES):
 
 ### Generate sentences and create a dataframe that has all sentences
 
-neutral_sentence_dict = generate_sentences()
+neutral_sentence_dict = generate_sentences(names=NEUTRAL_NAMES)
 male_sentence_dict = generate_sentences(names=MALE_NAMES)
 female_sentence_dict = generate_sentences(names=FEMALE_NAMES)
 
@@ -134,7 +147,36 @@ def get_cosine_similarity(a,avg_a_g):
 
     return (cos_x_f,cos_x_m)
 
+average_embedding_a_g = defaultdict(list)
+for (i,row) in pd_all_to_dict.items():
+    embedding = row["embedding"]
+    average_embedding_a_g[(row["group"],row["attribute"])].append(embedding)
+
+average_embedding_a_g = {k: np.mean(v,axis=0).squeeze() for k,v in average_embedding_a_g.items()}
+print(f"Average embeddings per group: {average_embedding_a_g}")
+
+cosine_similarities = {}
+for a in distinct_attributes:
+    (cos_x_f,cos_x_m) =get_cosine_similarity(a,average_embedding_a_g)
+    cosine_similarities[a] = (cos_x_f,cos_x_m)
+
+# Plot
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(10, 6))  # Increase the width of the chart
+
+ax.barh(list(cosine_similarities.keys()), [v[0] for v in cosine_similarities.values()], color='b', alpha=0.5, label='X-F')
+ax.barh(list(cosine_similarities.keys()), [v[1] for v in cosine_similarities.values()], color='r', alpha=0.5, label='X-M')
+ax.legend()
+
+# Adjust the layout to prevent labels from falling off
+plt.tight_layout()
+
+plt.savefig("cosine_similarities.png")
+
+
 def get_mean_cosine_difference(w, A, B):
+
     cosines_w_A = [np.dot(w,a) / (np.linalg.norm(w) * np.linalg.norm(a)) for a in A]
     cosines_w_B = [np.dot(w,b) / (np.linalg.norm(w) * np.linalg.norm(b)) for b in B]
     mean_cosine_A = np.mean(cosines_w_A)
@@ -142,31 +184,19 @@ def get_mean_cosine_difference(w, A, B):
     return mean_cosine_A - mean_cosine_B
 
 
-def get_WEAT_score(X,Y,A,B):
+def get_WEAT_score(X,Y,A,B): # This is still not the good metric!
     mean_cosines_for_X = [get_mean_cosine_difference(x,A,B) for x in X]
     mean_cosines_for_Y = [get_mean_cosine_difference(y,A,B) for y in Y]
     return np.mean(mean_cosines_for_X) - np.mean(mean_cosines_for_Y)
 
-print(get_WEAT_score([]))
+GROUP_F = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["group"] == "F"]
+GROUP_M = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["group"] == "M"]
+GROUP_OCC_F = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["attribute"] in FEMALE_OCCUPATIONS]
+GROUP_OCC_M = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["attribute"] in MALE_OCUPATIONS]
+
+print(get_WEAT_score(GROUP_F,GROUP_M,GROUP_OCC_F,GROUP_OCC_M))
 
     
-
-
-# Calculate average embeddings per group and attribute
-average_embedding_a_g = defaultdict(list)
-for (i,row) in pd_all_to_dict.items():
-    embedding = row["embedding"]
-    average_embedding_a_g[(row["group"],row["attribute"])].append(embedding)
-
-average_embedding_a_g = {k: np.mean(v,axis=0).squeeze() for k,v in average_embedding_a_g.items()}
-
-
-print(f"Average embeddings per group: {average_embedding_a_g}")
-
-
-
-for a in distinct_attributes:
-    get_cosine_similarity(a,average_embedding_a_g)
 
 
 
