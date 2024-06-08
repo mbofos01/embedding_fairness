@@ -30,12 +30,17 @@ def load_names_from_baby_names():
     intersect = pd.merge(males, females, on=["name"], how="inner")
     # Filter intersect where 1.3 > percent_x/percent_y > 0.7
     intersect = intersect[(intersect["percent_x"]/intersect["percent_y"] > 0.80) & (intersect["percent_x"]/intersect["percent_y"] < 1.2)]
+    # Sort by distance from 1 
+    intersect["distance"] = abs(intersect["percent_x"]/intersect["percent_y"] - 1)
+    intersect = intersect.sort_values(by='distance', ascending=True)
 
     # Assert that the sum of intersects percentages are 95% similar
-    assert abs(intersect["percent_x"].sum() - intersect["percent_y"].sum()) / len(intersect) < 0.05
+    
     males_subset = males[:20]
     females_subset = females[:20]
     intersect_subset = intersect[:min(20,len(intersect))]
+    print(f"Number of names in intersect: {len(intersect)}, {intersect_subset}")
+    assert abs(intersect["percent_x"].sum() - intersect["percent_y"].sum()) / len(intersect) < 0.01
 
     # Return array of top 1000 names
     man_array = males_subset["name"].values
@@ -188,6 +193,8 @@ def get_WEAT_score(X,Y,A,B): # This is still not the good metric!
     mean_cosines_for_X = [get_mean_cosine_difference(x,A,B) for x in X]
     mean_cosines_for_Y = [get_mean_cosine_difference(y,A,B) for y in Y]
     return np.mean(mean_cosines_for_X) - np.mean(mean_cosines_for_Y)
+
+
 
 GROUP_F = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["group"] == "F"]
 GROUP_M = [emb["embedding"] for emb in pd_all_to_dict.values() if emb["group"] == "M"]
