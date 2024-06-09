@@ -8,6 +8,8 @@ import random
 import datetime
 
 
+## This code originates from original CEAT code, https://github.com/weiguowilliam/CEAT/blob/master
+## Some changes have been made, to allow us to pass the word embeddings directly to the function, instead of via a pickle file.
 
 
 # weat 1
